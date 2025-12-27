@@ -5,3 +5,4 @@ dist/
 coverage/
 .vscode/
 *.sqlite
+src/routeTree.gen.ts
