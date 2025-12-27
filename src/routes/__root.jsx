@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import PizzaOfTheDay from "../components/PizzaOfTheDay";
 import Header from "../components/Header";
 import { CartContext } from "../contexts";
@@ -9,13 +10,16 @@ export const Route = createRootRoute({
     const cartHook = useState([]);
 
     return (
-      <CartContext.Provider value={cartHook}>
-        <div>
-          <Header />
-          <Outlet />
-          <PizzaOfTheDay />
-        </div>
-      </CartContext.Provider>
+      <>
+        <CartContext.Provider value={cartHook}>
+          <div>
+            <Header />
+            <Outlet />
+            <PizzaOfTheDay />
+          </div>
+        </CartContext.Provider>
+        <ReactQueryDevtools />
+      </>
     );
   },
 });
