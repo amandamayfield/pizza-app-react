@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, Suspense, use } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { createLazyFileRoute } from "@tanstack/react-router";
 import getPastOrders from "../api/getPastOrders";
@@ -14,21 +14,38 @@ export const Route = createLazyFileRoute("/past")({
 // error boundary has to wrap around the component
 // so created this higher level function
 function ErrorBoundaryWrapper() {
+  const [page, setPage] = useState(1);
+  const loadedPromise = useQuery({
+    queryKey: ["past-orders", page],
+    queryFn: () => getPastOrders(page),
+    staleTime: 30000, // 30 seconds
+  }).promise;
   return (
     <ErrorBoundary>
-      <PastOrdersRoute />
+      <Suspense
+        fallback={
+          <div className="past-orders">
+            <h2>Loading Past Orders …</h2>
+          </div>
+        }
+      >
+        <PastOrdersRoute
+          loadedPromise={loadedPromise}
+          page={page}
+          setPage={setPage}
+        />
+      </Suspense>
     </ErrorBoundary>
   );
 }
 
-function PastOrdersRoute() {
-  const [page, setPage] = useState(1);
+function PastOrdersRoute({ loadedPromise, page, setPage }) {
   const [focusedOrder, setFocusedOrder] = useState(null);
-  const { isLoading, data } = useQuery({
-    queryKey: ["past-orders", page],
-    queryFn: () => getPastOrders(page),
-    staleTime: 30000, // 30 seconds
-  });
+  // if this promise if not loaded yet stop here
+  // and hit the suspense boundary, where it will hit
+  // the fallback UI, until this is finished loading
+  // it also extracts loading out of the component
+  const data = use(loadedPromise);
 
   const { isLoading: isLoadingPastOrder, data: dataPastOrder } = useQuery({
     queryKey: ["past-order", focusedOrder],
@@ -36,14 +53,6 @@ function PastOrdersRoute() {
     staleTime: 86400000, // one day
     enabled: Boolean(focusedOrder),
   });
-
-  if (isLoading) {
-    return (
-      <div className="past-orders">
-        <h2>LOADING …</h2>
-      </div>
-    );
-  }
 
   return (
     <div className="past-orders">
